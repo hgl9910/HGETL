@@ -1,0 +1,21 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+      
+      {
+      "type": "cortex-debug",
+      "request": "launch",
+      "name": "Debug J-Link",
+      "cwd": "${workspaceRoot}",
+      "executable": "${workspaceRoot}/build/Blinky.elf",
+      "serverpath": "C:/Programme/SEGGER/JLink/JLinkGDBServerCL.exe", 
+      "servertype": "jlink",
+      "device": "STM32F411CE",
+      "interface": "swd",
+      "serialNumber": "", //If you have more than one J-Link probe, add the serial number here.
+     "runToMain": true,
+      "svdFile": "C:/STM32_SVD/STM32F411.svd" 
+      }
+      ]
+
+}

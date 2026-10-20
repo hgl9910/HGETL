@@ -1,0 +1,10 @@
+{
+    "files.associations": {
+        "lcd_fonts.h": "c",
+        "lcd.h": "c",
+        "main.h": "c",
+        "compare": "c",
+        "spi.h": "c"
+    },
+    "C_Cpp.errorSquiggles": "disabled"
+}

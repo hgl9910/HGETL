@@ -1,0 +1,233 @@
+
+https://chatgpt.com/   g/g-p-6acf743412708191921e61bd3497aa77-template-library/c/6ad22ac3-8dac-83ed-b012-267b761e642c
+
+https://github.com/hgl9910/HGETL
+
+arm-none-eabi-size build/Blinky.elf
+
+arm-none-eabi-nm -S --size-sort -C build/Blinky.elf
+
+Select-String -Path "Blinky.map" -Pattern "^\.bss " -Context 0,80
+
+*****************************************************************************
+Probleme 
+
+Ja. Bei HGETL gibt es aus Registersicht mehrere grundsätzliche Probleme, die über `read-modify-write` hinausgehen. Sie entstehen vor allem dann, wenn eine allgemeine Register-API auf Register angewendet wird, deren Hardwareverhalten besondere Regeln hat.
+
+Ich würde die Fälle trennen: Zugriffsrechte, Schreibsemantik, Nebenwirkungen beim Lesen und Bedeutung einzelner Bits. Diese Unterscheidung ist wichtig, weil eine Read-/Write-Policy allein nicht alle Fälle abdeckt.
+
+## 1. Die wesentlichen Registerprobleme
+
+| Registereigenschaft           | Problem bei einer generischen API                                             | Beispiel                                |
+| ----------------------------- | ----------------------------------------------------------------------------- | --------------------------------------- |
+| Read-only (RO)                | Ein Schreibzugriff muss ausgeschlossen sein.                                  | `GPIOx_IDR`                             |
+| Write-only (WO)               | Lesen, auch innerhalb eines RMW, ist unzulässig oder bedeutungslos.           | `GPIOx_BSRR`                            |
+| Read-write (RW)               | Ein RMW kann reservierte Bits oder Hardwareänderungen falsch zurückschreiben. | `GPIOx_MODER`                           |
+| Write-one-to-clear (W1C)      | Eine `1` löscht ein Statusbit. RMW kann unbeabsichtigt weitere Bits löschen.  | Viele Interrupt- und Statusregister     |
+| Write-one-to-set (W1S)        | Eine `1` setzt ein Bit; gewöhnliches RMW ist nicht die richtige Semantik.     | Bestimmte Steuerregister                |
+| Read-to-clear (RTC)           | Schon das Lesen verändert den Zustand.                                        | Bestimmte Status- und Interruptregister |
+| Hardwareveränderte Bits       | Zwischen Lesen und Schreiben kann die Hardware den Registerinhalt ändern.     | Timer- und Interruptstatus              |
+| Reservierte Bits              | Vorgeschriebene Schreibwerte können von den gelesenen Werten abweichen.       | Viele Peripherieregister                |
+| Getrennte Set-/Clear-Register | Ein Bit lässt sich gezielt ändern, ohne das ganze Register zu lesen.          | GPIO `BSRR`                             |
+
+## 2. Weitere Probleme im Detail
+
+### A. Schreibsemantik ist nicht immer RW oder WO
+
+Ein Register kann lesbar und beschreibbar sein, ohne dass gewöhnliches Lesen und Schreiben die richtige Operation darstellt.
+
+Typische Beispiele:
+
+- W1C: Statusbits werden durch Schreiben einer `1` gelöscht.
+- W0C: Statusbits werden durch Schreiben einer `0` gelöscht.
+- W1S: Bits werden durch Schreiben einer `1` gesetzt.
+- Toggle: Das Schreiben einer `1` invertiert ein Bit.
+- Command-Register: Ein Schreibzugriff löst eine Aktion aus, statt einen dauerhaften Wert zu speichern.
+
+Bei W1C ist beispielsweise diese vermeintliche Feldänderung gefährlich:
+
+```
+auto value = reg.read();
+value |= mask;
+reg.write(value);
+```
+
+Wenn andere Statusbits beim Schreiben einer `1` gelöscht werden, kann die Operation unbeabsichtigt mehrere Flags löschen.
+
+Die entscheidende Konsequenz für HGETL: Die Zugriffsrechte allein bestimmen nicht die Schreibsemantik.
+
+### B. Lesen kann Nebenwirkungen haben
+
+Bei einem Read-to-clear-Register verändert bereits `read()` den Zustand. Andere Register können beim Lesen Daten aus einer FIFO entfernen oder einen Hardwarezustand bestätigen.
+
+Deshalb reicht es nicht immer, `read()` für alle lesbaren Register anzubieten. Die Schnittstelle muss gegebenenfalls zwischen gewöhnlichem Lesen und einem Zugriff mit Nebenwirkungen unterscheiden.
+
+### C. Reservierte Bits und Bits mit vorgeschriebenen Werten
+
+Ein Register kann Bits enthalten, die beim Schreiben immer `0` oder einen anderen vorgeschriebenen Wert erhalten müssen.
+
+Hier helfen zwei verschiedene Masken:
+
+- Read-Maske: Welche Bits dürfen sinnvoll gelesen beziehungsweise ausgewertet werden?
+- Write-Maske: Welche Bits dürfen durch die Software geschrieben werden?
+
+Aber auch diese Masken lösen nicht jedes Problem. Eine Write-Maske sagt noch nicht, ob die übrigen Bits auf `0` gesetzt, mit einem gelesenen Wert erhalten oder überhaupt nicht in einem gemeinsamen Schreibzugriff behandelt werden dürfen.
+
+### D. Gleichzeitige Änderungen durch Hardware oder Interrupts
+
+Auch bei einem normalen RW-Register kann ein RMW problematisch sein:
+
+1. Software liest das Register.
+2. Die Hardware ändert ein Statusbit.
+3. Software schreibt den zuvor gelesenen und modifizierten Wert zurück.
+
+Damit kann eine zwischenzeitliche Änderung verloren gehen.
+
+`volatile` verhindert solche Konflikte nicht. Es erzwingt geeignete beobachtbare Zugriffe, bietet aber keine allgemeine Atomarität für RMW-Operationen.
+
+### E. Zugriffsbreite und Ausrichtung
+
+Nicht jedes Register darf mit beliebiger Breite angesprochen werden. Manche Register verlangen 8-, 16- oder 32-Bit-Zugriffe; bei anderen sind bestimmte Zugriffsbreiten nicht zulässig.
+
+HGETL sollte daher den tatsächlichen Registertyp und die vom jeweiligen Mikrocontroller erlaubte Zugriffsbreite abbilden. Ein allgemeines `uint32_t`-Modell ist für den STM32F411 häufig passend, aber keine universelle Regel für jede künftige Peripherie.
+
+### F. Register mit gemischten Feldsemantiken
+
+Ein Register kann beispielsweise normale RW-Felder, Statusflags und reservierte Bits enthalten.
+
+Dann ist eine einzige Registerpolicy unter Umständen zu grob. Ein generisches RMW über das gesamte Register kann trotz korrekter Felddefinitionen falsch sein.
+
+Hier muss die API entscheiden, ob ein Zugriff auf das Gesamtregister zulässig ist oder ob einzelne Felder beziehungsweise spezielle Operationen verwendet werden müssen.
+
+## 3. Was bedeutet das für die HGETL-Architektur?
+
+Ich würde die bisherige Architektur nicht verwerfen, sondern die Verantwortlichkeiten sauber trennen.
+
+1\. Registertyp
+
+Legt Registerbreite, Adresse und grundlegende Zugriffsoperationen fest.
+
+2\. Registerpolicy
+
+Legt fest, wie ein Register gelesen oder geschrieben wird: normales Lesen, direktes Schreiben, RMW oder eine spezielle Hardwareoperation.
+
+3\. Feldbeschreibung und Feldpolicy
+
+Beschreiben Position, Breite, zulässige Werte und gegebenenfalls besondere Semantik einzelner Bits.
+
+4\. Peripherieklasse
+
+Ordnet die Register gemäß dem Datenblatt an und bietet passende Operationen für die Peripherie an.
+
+Wichtig ist, dass diese Ebenen nicht automatisch alle unabhängig voneinander parametrisiert werden müssen. Die Architektur soll die Unterschiede ausdrücken können, aber nicht jedes Register unnötig kompliziert machen.
+
+## 4. Welche Fälle würde ich zuerst berücksichtigen?
+
+Für HGETL würde ich zunächst diese Anforderungen abdecken:
+
+1. RO, WO und RW müssen echte Zugriffsbeschränkungen sein.
+2. Direktes Schreiben muss von RMW unterschieden werden.
+3. RMW darf nicht automatisch für jedes RW-Register verfügbar sein.
+4. W1C und vergleichbare Semantiken müssen bei Bedarf ausdrücklich modellierbar sein.
+5. Reservierte Bits und vorgeschriebene Schreibwerte müssen berücksichtigt werden können.
+6. Die Zugriffsbreite muss zum Hardwareregister passen.
+
+Read-to-clear, Toggle, FIFO-Semantik und weitere Spezialfälle müssen nicht sofort als fertige Policies implementiert werden. Die Architektur sollte sie lediglich nicht unmöglich machen.
+
+Der wichtigste Entwurfspunkt: `rw_policy` sollte nicht automatisch bedeuten, dass `read()`, `write()` und `write(value, mask)` für jedes Register gleichermaßen sicher sind. Insbesondere ist RMW keine harmlose Standardoperation, sondern eine zusätzliche Fähigkeit, die ein Register unterstützen muss.
+
+
+********************************************************************************************************************************
+Trennung 
+
+Man kann es trennen, aber nicht vollständig. Entscheidend ist, ob eine Eigenschaft den Zugriff auf das gesamte Register oder die Bedeutung eines bestimmten Feldes beschreibt.
+
+Ich würde für HGETL zunächst folgende Zuordnung verwenden.
+
+## 1. Was gehört wohin?
+
+| Eigenschaft                        | Register                                         | Feld                                                    |
+| ---------------------------------- | ------------------------------------------------ | ------------------------------------------------------- |
+| Hardwareadresse                    | Ja                                               | Nein                                                    |
+| Zugriffsbreite, z. B. 32 Bit       | Ja                                               | Nein                                                    |
+| Registerzugriff RO/WO/RW           | Ja, als grundsätzliche Einschränkung             | Kann zusätzlich eingeschränkt werden                    |
+| Position und Breite                | Nein                                             | Ja                                                      |
+| Zulässige Werte, z. B. Enum        | Nein                                             | Ja                                                      |
+| Normales RMW-Verhalten             | Ja, sofern für das gesamte Register zulässig     | Kann eine gezielte Feldoperation ermöglichen            |
+| W1C/W1S-Semantik                   | Häufig registerweit, kann aber feldabhängig sein | Ja, wenn nur bestimmte Felder diese Semantik besitzen   |
+| Reservierte Bits                   | Ja, hinsichtlich der Schreibregeln des Registers | Feldbeschreibung kann reservierte Bereiche kennzeichnen |
+| Read-to-clear                      | Häufig registerweit, gegebenenfalls feldabhängig | Ja, wenn nur bestimmte Felder betroffen sind            |
+| Schreibmaske                       | Ja, als Gesamtmaske                              | Feldmaske ergibt sich aus den Feldern oder ihrer Policy |
+| Registerzugriff mit Nebenwirkungen | Ja, soweit der Zugriff als Ganzes betroffen ist  | Ja, wenn die Nebenwirkung nur ein Feld betrifft         |
+
+## 2. Warum eine vollständige Trennung nicht funktioniert
+
+Nehmen wir ein hypothetisches 32-Bit-Statusregister:
+
+- Bits 0–3: normale RW-Steuerfelder
+- Bits 4–7: W1C-Statusflags
+- Bits 8–31: reserviert, beim Schreiben auf `0` zu halten
+
+Das Register besitzt nicht eine einzige einheitliche Schreibsemantik. Die Bedeutung hängt von den einzelnen Bits ab.
+
+Ein globales `rw_policy` reicht dafür nicht. Eine reine Feldpolicy reicht aber ebenfalls nicht aus, weil die Hardware weiterhin nur einen 32-Bit-Registerzugriff erwartet und die Regeln für den gemeinsamen Schreibzugriff eingehalten werden müssen.
+
+Hier braucht man Registerregeln und Feldregeln, die zusammenwirken.
+
+## 3. Konsequenz für die HGETL-Typen
+
+Ich würde drei Ebenen unterscheiden:
+
+- `register_t`: Adresse, Breite und technische Zugriffsmöglichkeiten.
+- `field_t`: Position, Breite, Wertetyp und feldspezifische Semantik.
+- Register- und Feldpolicies: Regeln, welche Operationen tatsächlich zulässig sind.
+
+Wichtig: Die Policy muss nicht zwingend eine eigene Klasse für jede denkbare Registerart sein. Sie soll ausdrücken, welche Operation erlaubt ist und wie sie ausgeführt wird.
+
+Beispielsweise ist bei `GPIOx_BSRR` das direkte Schreiben die richtige Registeroperation. Bei einem Statusregister mit W1C-Feldern kann eine feldspezifische Schreiboperation notwendig sein, die kein RMW verwendet.
+
+## 4. Meine Empfehlung
+
+Für HGETL würde ich zunächst die Eigenschaften nach ihrem Geltungsbereich zuordnen, ohne schon alle Policies zu implementieren:
+
+1. Register: Adresse, Zugriffsbreite, grundsätzliche Lesbarkeit und Beschreibbarkeit, zulässige Registeroperationen.
+2. Feld: Position, Breite, Typ, zulässige Werte und gegebenenfalls besondere Bitsemantik.
+3. Zusammenspiel: Regeln für gemischte Register, reservierte Bits und die Frage, ob eine Feldänderung als RMW überhaupt zulässig ist.
+
+Die wichtigste Grenze ist dabei: Ein Feld ist keine eigenständige Hardwareadresse. Eine Feldoperation wird letztlich auf das Register abgebildet. Deshalb darf eine Feldpolicy keine Registeroperation erzwingen, die der Registerhardware widerspricht.
+
+
+
+Ja. Dann ergeben sich die Lese- und Schreibrechte aus `ReadMask` und `WriteMask`; die `register_policy` bestimmt nur die Schreibstrategie.
+
+| ReadMask | WriteMask | Bedeutung                   |
+| -------- | --------- | --------------------------- |
+| `!= 0`   | `!= 0`    | Lesen und Schreiben möglich |
+| `!= 0`   | `== 0`    | Read-only                   |
+| `== 0`   | `!= 0`    | Write-only                  |
+| `== 0`   | `== 0`    | Kein Zugriff                |
+
+Damit gilt:
+
+- `ReadMask` und `WriteMask` steuern die Zugriffsrechte zur Compile-Zeit.
+- `mW` und `dW` steuern, wie ein Schreibzugriff ausgeführt wird.
+- `field_t` bleibt unverändert.
+
+Eine Präzisierung: Die Masken können auch einzelne Bits sperren. Deshalb sollte `register_t` nicht nur prüfen, ob eine Maske null ist, sondern sie bei den jeweiligen Operationen tatsächlich anwenden. Für `BSRR` bedeutet das `ReadMask = 0` und `dW`; für ein gewöhnliches RW-Register typischerweise eine lesbare und schreibbare Maske sowie `mW`.
+
+*************************************************************************************************************************************************
+register neu
+
+register_policy {
+
+
+}
+
+template<register_policy Policy,
+         register_value ReadMask,
+         register_value WriteMask>
+struct register_t
+{
+    // bisherige Registerzugriffe
+	// erweitern auf ohne modify
+};
