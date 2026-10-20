@@ -63,7 +63,7 @@ The development tests include configuring pin modes and controlling output state
 
 GPIO serves as the reference implementation for evaluating whether the same design can be applied to more complex peripherals.
 
-Demo Application
+## Demo Application
 
 The project currently includes a simple demo application for the STM32F411 Black Pill board.
 
