@@ -53,6 +53,32 @@ For example, GPIO operations should allow pins and modes to be specified using d
 
 The goal is to make incorrect operations difficult to express and, where possible, impossible to compile.
 
+### Peripheral Access and Memory Usage
+
+HGPTL uses accessor functions such as GetPort_A() to provide direct access to memory-mapped peripheral devices.
+
+The library does not store references to all available peripheral instances by default. Such references would be unnecessary for peripherals that an application never uses and could introduce avoidable storage overhead, especially if additional guard objects were required by the access mechanism.
+
+Instead, an application obtains access to a peripheral explicitly:
+
+auto& portA = GetPort_A();
+
+The returned reference refers directly to the hardware peripheral at its defined base address. It does not represent a separate peripheral object in RAM.
+
+Applications may keep references to the peripherals they actually use. HGPTL does not require applications to maintain references to unused peripherals.
+
+This design keeps peripheral access explicit and avoids unnecessary stored objects for devices that are not used by the application.
+
+###Reference Lifetime
+
+Peripheral devices represent hardware at fixed memory addresses and cannot be dynamically created or deleted.
+
+A function can obtain a peripheral reference through an accessor such as GetPort_A() and pass that reference to other functions or objects. The reference does not depend on the lifetime of a dynamically allocated peripheral object.
+
+Consequently, users do not need to manage peripheral object lifetimes or worry about a peripheral object being destroyed while its reference is still in use.
+
+As with any C++ reference, the reference itself must still be used within its own valid lifetime. The hardware peripheral, however, remains at its fixed address independently of the scope in which the reference was obtained.
+
 ## GPIO
 
 GPIO is the initial peripheral used to develop and validate the design.
