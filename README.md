@@ -69,7 +69,7 @@ Applications may keep references to the peripherals they actually use. HGPTL doe
 
 This design keeps peripheral access explicit and avoids unnecessary stored objects for devices that are not used by the application.
 
-###Reference Lifetime
+### Reference Lifetime
 
 Peripheral devices represent hardware at fixed memory addresses and cannot be dynamically created or deleted.
 
