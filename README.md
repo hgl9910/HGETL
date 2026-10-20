@@ -18,7 +18,7 @@ The initial development and testing target is the STM32F411.
 - **Readable interface:** Provide an API that is understandable to embedded developers familiar with C-style peripheral programming.
 - **Hardware-specific definitions:** Keep peripheral addresses and register descriptions separate from generic access mechanisms.
 
-### ### Type-Safety Boundary
+### Type-Safety Boundary
 
 HGPTL applies type safety at the peripheral interface.
 
