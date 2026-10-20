@@ -63,6 +63,14 @@ The development tests include configuring pin modes and controlling output state
 
 GPIO serves as the reference implementation for evaluating whether the same design can be applied to more complex peripherals.
 
+Demo Application
+
+The project currently includes a simple demo application for the STM32F411 Black Pill board.
+
+The application demonstrates basic GPIO functionality: each time the user presses the user button, the onboard LED lights up.
+
+The demo serves as a practical test of the GPIO implementation and the underlying type-safe register access mechanisms.
+
 ## Timer Support
 
 Timers are the next major step in validating the architecture.
