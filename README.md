@@ -18,6 +18,18 @@ The initial development and testing target is the STM32F411.
 - **Readable interface:** Provide an API that is understandable to embedded developers familiar with C-style peripheral programming.
 - **Hardware-specific definitions:** Keep peripheral addresses and register descriptions separate from generic access mechanisms.
 
+### ### Type-Safety Boundary
+
+HGPTL applies type safety at the peripheral interface.
+
+The public API uses dedicated peripheral types, concepts and strongly typed values to prevent invalid operations and configurations where possible.
+
+The common peripheral implementation, such as `gpio_impl`, forms the boundary between the type-safe interface and the low-level register operations.
+
+Below this boundary, the implementation may use integer values, bit positions and masks to perform the actual hardware access.
+
+This keeps the public interface type-safe without imposing the same type-system complexity on every low-level implementation detail.
+
 ## Architecture
 
 HGPTL separates the description of peripheral hardware from the mechanisms used to access it.
