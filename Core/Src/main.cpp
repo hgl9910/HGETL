@@ -8,17 +8,9 @@
 
 #include "main.h"
 #include "Types.h"
-// #include "Utils.h"
-//#include "Gpiodef.h"
-//#include "GpioImpl.h"
 #include "Gpio.h"
-//#include "Access.h"
-//#include "Fields.h"
-//#include "Concepts.h"
-//#include "Register.h"
-//#include "GpioImpl.h"
 
-
+using namespace hgptl::gpio;
 
 /**
   * @brief  The application entry point.

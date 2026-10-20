@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstddef>
-#include <type_traits>
 #include <utility>
 
 #include "Access.h"
@@ -10,9 +9,11 @@
 #include "Gpiodef.h"
 #include "Register.h"
 #include "Types.h"
-#include "Utils.h"
 
+namespace hgptl::gpio::detail{ 
 
+using namespace hgptl::detail;   
+using namespace hgptl::devices::detail;
 
     struct gpio_regs {
        
@@ -185,3 +186,4 @@
     
 
 };
+}

@@ -3,7 +3,7 @@
 #include <cstdint>
 
 
-
+namespace hgptl {
    /* used types */
 using device_base       = std::uintptr_t; 
 using device_register   = volatile std::uint32_t;
@@ -22,4 +22,5 @@ constexpr device_base   CONST_GPIOD_BASE        = CONST_AHB1PERIPH_BASE + 0x0C00
 constexpr device_base   CONST_GPIOE_BASE        = CONST_AHB1PERIPH_BASE + 0x1000UL;
 constexpr device_base   CONST_GPIOH_BASE        = CONST_AHB1PERIPH_BASE + 0x1C00UL;    
  
+}
 

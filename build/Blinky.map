@@ -587,15 +587,15 @@ LOAD c:/gnu/gcc-arm-none-eabi-12.2.rel1/bin/../lib/gcc/arm-none-eabi/12.2.1/thum
                                  0x46 (size before relaxing)
  .comment       0x00000045       0x46 build/main.o
 
-.debug_info     0x00000000     0x1ddc
+.debug_info     0x00000000     0x1e73
  .debug_info    0x00000000      0x5de build/system_stm32f4xx.o
- .debug_info    0x000005de     0x17ce build/main.o
- .debug_info    0x00001dac       0x30 build/startup_stm32f411xe.o
+ .debug_info    0x000005de     0x1865 build/main.o
+ .debug_info    0x00001e43       0x30 build/startup_stm32f411xe.o
 
-.debug_abbrev   0x00000000      0x5a9
+.debug_abbrev   0x00000000      0x5ce
  .debug_abbrev  0x00000000      0x11b build/system_stm32f4xx.o
- .debug_abbrev  0x0000011b      0x471 build/main.o
- .debug_abbrev  0x0000058c       0x1d build/startup_stm32f411xe.o
+ .debug_abbrev  0x0000011b      0x496 build/main.o
+ .debug_abbrev  0x000005b1       0x1d build/startup_stm32f411xe.o
 
 .debug_loc      0x00000000      0x538
  .debug_loc     0x00000000       0xbe build/system_stm32f4xx.o
@@ -614,17 +614,17 @@ LOAD c:/gnu/gcc-arm-none-eabi-12.2.rel1/bin/../lib/gcc/arm-none-eabi/12.2.1/thum
  .debug_ranges  0x00000018       0x28 build/main.o
  .debug_ranges  0x00000040       0x20 build/startup_stm32f411xe.o
 
-.debug_line     0x00000000      0x64f
+.debug_line     0x00000000      0x667
  .debug_line    0x00000000      0x212 build/system_stm32f4xx.o
- .debug_line    0x00000212      0x3c7 build/main.o
- .debug_line    0x000005d9       0x76 build/startup_stm32f411xe.o
+ .debug_line    0x00000212      0x3df build/main.o
+ .debug_line    0x000005f1       0x76 build/startup_stm32f411xe.o
 
-.debug_str      0x00000000     0x1402
+.debug_str      0x00000000     0x19be
  .debug_str     0x00000000      0x2ff build/system_stm32f4xx.o
                                 0x349 (size before relaxing)
- .debug_str     0x000002ff     0x10d1 build/main.o
-                               0x12cf (size before relaxing)
- .debug_str     0x000013d0       0x32 build/startup_stm32f411xe.o
+ .debug_str     0x000002ff     0x168d build/main.o
+                               0x188c (size before relaxing)
+ .debug_str     0x0000198c       0x32 build/startup_stm32f411xe.o
                                  0x50 (size before relaxing)
 
 .debug_frame    0x00000000       0x7c

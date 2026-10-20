@@ -3,7 +3,8 @@
 #include <limits>
 #include <utility>
 
-/*
+namespace hgptl {
+    /*
     ----------------------------------- 
      utils 
     -------------------------------------
@@ -27,3 +28,5 @@
     constexpr T varadic_or(unsigned mask, Args&&... args ) noexcept {
         return static_cast<T>( ((mask << width*std::to_underlying(args)) | ...) );
     }
+
+}

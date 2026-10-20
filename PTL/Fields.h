@@ -3,10 +3,9 @@
 #include <limits>
 
 #include "Access.h"
-#include "Concepts.h"
-#include "Types.h"
 #include "Utils.h"
 
+namespace hgptl::devices::detail {
     /*
     ----------------------------------- 
     field type
@@ -26,3 +25,4 @@
         static constexpr unsigned width = w;
         static constexpr unsigned mask = make_mask<register_value,width,pos>::value;
     };
+}

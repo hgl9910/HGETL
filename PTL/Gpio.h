@@ -4,8 +4,14 @@
 
 #include "GpioImpl.h"
 
+
+namespace hgptl::gpio {
+
+using namespace hgptl::gpio::detail;
+
 // gpio instances
 template<gpio_base_t base>
+
 struct gpio_t : gpio_impl {
 
     static constexpr device_base address = static_cast<device_base>(base);
@@ -91,11 +97,4 @@ inline gpiod_t& PortD = *reinterpret_cast<gpiod_t*>(gpiod_t::address);
 inline gpioe_t& PortE = *reinterpret_cast<gpioe_t*>(gpioe_t::address);
 inline gpioh_t& PortH = *reinterpret_cast<gpioh_t*>(gpioh_t::address);
 
-// high level 
-
-namespace hgl::gpio { 
-    template<gpio_device_t port,pin_t pin> 
-    struct gpiopin_t {
-    
-    };
-} 
+}

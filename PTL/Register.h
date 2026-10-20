@@ -2,11 +2,7 @@
 
 #include <utility>
 
-#include "Access.h"
-#include "Concepts.h"
-#include "Fields.h"
-#include "Types.h"
-#include "Utils.h"
+namespace hgptl::devices::detail{
 
 enum class register_policy
 {
@@ -22,7 +18,8 @@ template<
 struct register_t
 {
 private:
-    device_register reg;
+    device_register reg;  // das device register
+
 
     // Zentrale Lesefunktion
     register_value read_impl(register_value mask) const
@@ -163,3 +160,5 @@ public:
         write_impl(value, mask);
     }
 };
+
+}

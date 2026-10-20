@@ -1,24 +1,18 @@
 #pragma once
 
-#include <concepts>
-#include <type_traits>
-
-#include "Access.h"
-
+namespace hgptl::detail {
 /*
     ----------------------------------- 
     concepts
     -------------------------------------
-    */
+*/
 
     template<typename T, typename ... Args>
         concept all_same_as = (std::same_as<T, Args> && ...) && (sizeof...(Args) > 0);
 
-/*
-    template<typename T, typename ... U>
-			requires (sizeof...(Args) > 0 && ...);
-*/
+}
 
+namespace hgptl::devices::detail {
 template<typename T>
 concept register_field = requires {
     typename T::value_type;
@@ -29,3 +23,5 @@ concept register_field = requires {
     T::width;
     T::mask;
 };
+
+}

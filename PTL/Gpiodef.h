@@ -2,6 +2,9 @@
 
 #include "Types.h"
 
+namespace hgptl::gpio {
+
+
     enum class gpio_base_t : device_base{
         portA = CONST_GPIOA_BASE,
         portB = CONST_GPIOB_BASE,
@@ -31,3 +34,5 @@
 
                        
     enum class pin_value_t { RESET, SET };                   
+
+}   

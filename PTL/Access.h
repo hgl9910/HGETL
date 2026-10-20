@@ -1,5 +1,6 @@
 #pragma once
 
+namespace hgptl::devices::detail {
     /*
     ----------------------------------- 
     field access type
@@ -19,5 +20,5 @@
 
     template<typename T>
     concept access_policy = requires(T t) { t.is_readable && t.is_writeable; };
-
+}
 
